@@ -1,0 +1,4 @@
+com.github.jsafarik.ocp.monitoring.job.impl.UpdateKubeconfigsJob
+com.github.jsafarik.ocp.monitoring.job.impl.AccessibilityJob
+com.github.jsafarik.ocp.monitoring.job.impl.NodeCheckJob
+com.github.jsafarik.ocp.monitoring.job.impl.DeployCheckJob
