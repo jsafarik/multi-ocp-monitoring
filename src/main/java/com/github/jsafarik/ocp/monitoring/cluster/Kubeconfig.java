@@ -1,6 +1,7 @@
 package com.github.jsafarik.ocp.monitoring.cluster;
 
 import com.github.jsafarik.ocp.monitoring.util.http.HttpUtils;
+import com.github.jsafarik.ocp.monitoring.util.http.Response;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -8,12 +9,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.fabric8.kubernetes.client.internal.KubeConfigUtils;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.Getter;
+import lombok.extern.jbosslog.JBossLog;
 
 /**
  * Class representing each kubeconfig tracked by this monitoring app
  */
+@JBossLog
 public class Kubeconfig {
 
     @Getter
@@ -46,8 +50,22 @@ public class Kubeconfig {
     /**
      * Fetch and update the currently saved content of the provided kubeconfig.
      */
-    public void updateContents() {
-        this.contents = HttpUtils.doRequest("GET", url, null, null).getBody();
+    public synchronized void updateContents() {
+        Response response = HttpUtils.doRequest("GET", url, null, null);
+        if (response.getCode() == 200 && response.getBody() != null && validateKubeconfig(response.getBody())) {
+            this.contents = response.getBody();
+        }
+    }
+
+    private boolean validateKubeconfig(String kubeconfigContents) {
+        try {
+            KubeConfigUtils.parseConfigFromString(kubeconfigContents);
+        } catch (Exception e) {
+            log.error("Fetched kubeconfig URL did not contain a proper kubeconfig contents " + e.getMessage());
+            return false;
+        }
+
+        return true;
     }
 
     /**

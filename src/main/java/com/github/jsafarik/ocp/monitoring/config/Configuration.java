@@ -97,7 +97,6 @@ public class Configuration {
             kubeconfigsWithFilters.put(getProperty(new Property(Property.envVarToApplicationProperty(kubeconfigPropertyName))), filters);
         }
 
-        log.info(kubeconfigsWithFilters);
         return kubeconfigsWithFilters;
     }
 
