@@ -20,7 +20,7 @@ public class Configuration {
 
     private final Property NAMESPACE = new Property("sample.app.namespace", "infra-test");
     private final Property KUBECONFIGS = new Property("monitoring.kubeconfig");
-    private final Property CONTEXT_FILTER = new Property("monitoring.context.filters");
+    private final Property CONTEXT_FILTER = new Property("monitoring.context.filters", "");
 
     /**
      * Get single property by the exact name of the property's name. <br/>
@@ -72,7 +72,9 @@ public class Configuration {
         for (String kubeconfigPropertyName : kubeconfigPropertyNames) {
             List<String> filters = new ArrayList<>();
 
-            if (filterPropertyNames.size() == 1) {
+            if (filterPropertyNames.size() == 0) {
+                filters.add(getProperty(CONTEXT_FILTER));
+            } else if (filterPropertyNames.size() == 1) {
                 // If there is only 1 filter, apply it for all kubeconfigs
                 filters.addAll(
                     Arrays.asList(getProperty(new Property(Property.envVarToApplicationProperty(filterPropertyNames.get(0)))).split(","))
