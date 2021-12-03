@@ -30,7 +30,7 @@ public class Configuration {
         String p = System.getenv(property.getEnvVarName());
 
         if (p == null || p.isEmpty()) {
-            p = ConfigProvider.getConfig().getValue(property.getApplicationPropertyName(), String.class);
+            p = ConfigProvider.getConfig().getOptionalValue(property.getApplicationPropertyName(), String.class).orElse(null);
         }
 
         if (p == null || p.isEmpty()) {
