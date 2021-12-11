@@ -72,10 +72,14 @@ public class HttpUtils {
 
         switch (method) {
             case "GET":
+            case "DELETE":
                 break;
             case "POST":
+            case "PUT":
                 requestBody = RequestBody.create(MediaType.get("text/plain"), content);
                 break;
+            default:
+                throw new IllegalArgumentException("Unsuported HTTP request method: " + method);
         }
 
         Request.Builder request = new Request.Builder().url(url).method(method, requestBody);
