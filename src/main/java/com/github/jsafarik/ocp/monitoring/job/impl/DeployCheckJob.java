@@ -299,7 +299,7 @@ public class DeployCheckJob extends MonitoringJob {
                             && !name.contains("deploy")
                             && !name.contains("build")
                             && p.getStatus().getContainerStatuses().stream().anyMatch(ContainerStatus::getReady)
-                            && cluster.getClient().pods().inNamespace(namespace).withName(name).getLog().contains("Sample app has started!");
+                            && cluster.getClient().pods().inNamespace(namespace).withName(name).getLog().contains("Created table");
                     });
 
                 boolean buildConfig = cluster.getClient().buildConfigs().inNamespace(namespace).list().getItems()
@@ -353,27 +353,27 @@ public class DeployCheckJob extends MonitoringJob {
 
         String url = "http://" + route.get().getSpec().getHost();
 
-        Response response = HttpUtils.doRequest("GET", url + "/init", null, null);
-        if (!response.getBody().contains("Tasks table created")) {
-            log.error("Sample test application didn't confirm database table creation: " + response.getBody() + response.getCode());
-            return false;
-        }
-
-        response = HttpUtils.doRequest("POST", url + "/add", Headers.of("Content-Type", "text/plain"), "my first task");
-        if (!response.getBody().contains("Success")) {
+        Response response = HttpUtils.doRequest("POST", url + "/add", Headers.of("Content-Type", "text/plain"), "my first task");
+        if (!response.getBody().contains("OK")) {
             log.error("Sample test application didn't confirm addition of a new element");
             return false;
         }
 
+        response = HttpUtils.doRequest("PUT", url + "/update/1", Headers.of("Content-Type", "text/plain"), "changed task");
+        if (!response.getBody().contains("OK")) {
+            log.error("Sample test application didn't confirm update of a new element");
+            return false;
+        }
+
         response = HttpUtils.doRequest("GET", url + "/get/1", null, null);
-        if (!response.getBody().contains("my first task")) {
+        if (!response.getBody().contains("changed task")) {
             log.error("Sample test application didn't return requested element");
             return false;
         }
 
-        response = HttpUtils.doRequest("GET", url + "/drop", null, null);
-        if (!response.getBody().contains("Tasks table dropped")) {
-            log.error("Sample test application didn't confirm database table was dropped");
+        response = HttpUtils.doRequest("DELETE", url + "/delete/1", null, null);
+        if (!response.getBody().contains("OK")) {
+            log.error("Sample test application didn't confirm it deleted first element");
             return false;
         }
 
@@ -396,10 +396,10 @@ public class DeployCheckJob extends MonitoringJob {
                         && !name.contains("build");
                 }).anyMatch(pod -> {
                     String log = cluster.getClient().pods().inNamespace(namespace).withName(pod.getMetadata().getName()).getLog();
-                    return log.contains("Initialized DB")
-                        && log.contains("Added new task")
-                        && log.contains("Got task")
-                        && log.contains("Dropped task_list table");
+                    return log.contains("Task created")
+                        && log.contains("Task updated")
+                        && log.contains("Read single task")
+                        && log.contains("Task deleted");
                 });
         } catch (KubernetesClientException ex) {
             log.error("Something went wrong while retrieving sample app pod's log: " + ex.getMessage());
