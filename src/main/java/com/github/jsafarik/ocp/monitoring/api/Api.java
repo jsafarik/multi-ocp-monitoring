@@ -9,6 +9,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import lombok.extern.jbosslog.JBossLog;
 
@@ -40,7 +41,7 @@ public class Api {
     @GET
     @Path("{cluster}")
     @Produces(MediaType.APPLICATION_JSON)
-    public boolean isClusterRunning(@PathParam("cluster") String cluster) {
-        return manager.getWorkingClusters().stream().anyMatch(c -> c.contains(cluster));
+    public Set<String> getWorkingClusters(@PathParam("cluster") String cluster) {
+        return manager.getWorkingClusters().stream().filter(c -> c.contains(cluster)).collect(Collectors.toSet());
     }
 }
