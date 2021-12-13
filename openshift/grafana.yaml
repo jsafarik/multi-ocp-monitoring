@@ -1,0 +1,109 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+labels:
+  template: grafana
+metadata:
+  name: grafana
+objects:
+
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: grafana-service
+    spec:
+      ports:
+        - name: grafana
+          port: 3000
+          protocol: TCP
+          targetPort: grafana-http
+      selector:
+        app: grafana
+      sessionAffinity: None
+      type: ClusterIP
+
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: grafana-deployment
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app: grafana
+      strategy:
+        rollingUpdate:
+          maxSurge: 25
+          maxUnavailable: 25
+        type: RollingUpdate
+      template:
+        metadata:
+          annotations:
+            prometheus.io/port: "3000"
+            prometheus.io/scrape: "true"
+          labels:
+            app: grafana
+          name: grafana-deployment
+        spec:
+          containers:
+            - image: ${IMAGE_URL}
+              imagePullPolicy: IfNotPresent
+              name: grafana
+              ports:
+                - containerPort: 3000
+                  name: grafana-http
+                  protocol: TCP
+              resources:
+                limits:
+                  cpu: 500m
+                  memory: 1Gi
+                requests:
+                  cpu: 100m
+                  memory: 256Mi
+              volumeMounts:
+                - mountPath: /var/lib/grafana
+                  name: grafana-data
+                - mountPath: /var/lib/grafana/plugins
+                  name: grafana-plugins
+                - mountPath: /etc/grafana/provisioning/plugins
+                  name: grafana-provision-plugins
+                - mountPath: /etc/grafana/provisioning/dashboards
+                  name: grafana-provision-dashboards
+                - mountPath: /etc/grafana/provisioning/notifiers
+                  name: grafana-provision-notifiers
+                - mountPath: /var/log/grafana
+                  name: grafana-logs
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          terminationGracePeriodSeconds: 30
+          volumes:
+            - emptyDir: {}
+              name: grafana-provision-plugins
+            - emptyDir: {}
+              name: grafana-provision-dashboards
+            - emptyDir: {}
+              name: grafana-provision-notifiers
+            - emptyDir: {}
+              name: grafana-logs
+            - emptyDir: {}
+              name: grafana-data
+            - emptyDir: {}
+              name: grafana-plugins
+
+  - apiVersion: route.openshift.io/v1
+    kind: Route
+    metadata:
+      name: grafana-service
+    spec:
+      port:
+        targetPort: grafana
+      to:
+        kind: Service
+        name: grafana-service
+        weight: 100
+      wildcardPolicy: None
+
+parameters:
+  - name: IMAGE_URL
+    description: Grafana image URL (for example quay.io/repository/image)
+    displayName: Grafana image URL
+    value: docker.io/grafana/grafana
