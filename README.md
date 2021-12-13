@@ -11,7 +11,18 @@ This project uses Quarkus, the Supersonic Subatomic Java Framework.
 The application is exposing 2 endpoints:
 
 - `/clusters` - lists all currently accessible and working clusters (must pass the accessibility and sample application checks)
-- `/clusters/{name}` - Tries to find a cluster containing the `{name}` path parameter and returns `true` or `false` describing if the found cluster is accessible and working.
+- `/clusters/{name}` - lists all currently accessible and working clusters containing the `{name}` path parameter.
+
+## Deployment
+
+### OpenShift
+
+The `openshift` directory contains two files:
+
+- `multiOcpMonitoring.yaml` - deploys the Multi OCP Monitoring application bundled with a Prometheus instance. The deployment automatically points the Prometheus to the monitoring app.
+- `grafana.yaml` - deploy a Grafana instance. The datasource for prometheus needs to be added manually to start creating dashboards.
+
+Both templates can be deployed using the command `oc process -f openshift/{file} | oc create -f -` where `{file}` is the name of the template file. To specify parameter value, add `-p KEY=value` with the correct key and value.
 
 ## Configuration
 
