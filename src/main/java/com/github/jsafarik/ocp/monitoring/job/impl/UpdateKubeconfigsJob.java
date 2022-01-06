@@ -29,14 +29,10 @@ public class UpdateKubeconfigsJob extends MonitoringJob {
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         Map<String, List<String>> kubeconfigsWithFilters = getConfiguration().getKubeconfigsWithFilters();
+
         for (String kubeconfigUrl : kubeconfigsWithFilters.keySet()) {
-            Kubeconfig kubeconfig = this.getManager().getKubeconfig(kubeconfigUrl);
-            kubeconfig.updateContents();
-            List<Cluster> clusters = new ArrayList<>();
-            for (NamedContext ctx : getContexts(kubeconfig.getContents(), kubeconfigsWithFilters.get(kubeconfigUrl))) {
-                clusters.add(kubeconfig.getCluster(ctx.getName()));
-            }
-            kubeconfig.retainClusters(clusters);
+            Kubeconfig kubeconfig = updateKubeconfig(kubeconfigUrl);
+            updateClusters(kubeconfig, kubeconfigsWithFilters.get(kubeconfigUrl));
         }
     }
 
@@ -61,5 +57,21 @@ public class UpdateKubeconfigsJob extends MonitoringJob {
         }
 
         return contexts;
+    }
+
+    private Kubeconfig updateKubeconfig(String url) {
+        Kubeconfig kubeconfig = this.getManager().getKubeconfig(url);
+        kubeconfig.updateContents();
+        return kubeconfig;
+    }
+
+    private void updateClusters(Kubeconfig kubeconfig, List<String> filters) {
+        if (kubeconfig.getContents() != null && !kubeconfig.getContents().isEmpty()) {
+            List<Cluster> clusters = new ArrayList<>();
+            for (NamedContext ctx : getContexts(kubeconfig.getContents(), filters)) {
+                clusters.add(kubeconfig.getCluster(ctx.getName()));
+            }
+            kubeconfig.retainClusters(clusters);
+        }
     }
 }
